@@ -4,19 +4,19 @@ Plankton - Secure Drive Sanitisation Tool
 Author: dx73r
 """
 
-#importing required libraries
-import os, sys
-from rich.console import Console
-from rich.panel import Panel
+#importing libs
+import os, sys, psutil
 import pyfiglet
+from rich.panel import Panel
+from rich.table import Table
+from rich.console import Console
 
 
-#constructors of the classes
+#constructors
 console = Console()
 
 
-
-
+#functions
 def display_banner():
     banner = pyfiglet.figlet_format("Plankton", font="slant")
     console.print("\n\n", banner, style="bold cyan", justify="center")
@@ -32,6 +32,10 @@ def check_root():
         console.print("Try: sudo python3 plankton.py\n", style="bold")
         sys.exit(1)
 
+
+
+def list_drives():
+    
 
 
 if __name__ == "__main__":
