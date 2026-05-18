@@ -35,7 +35,7 @@ def check_root():
 
 
 def list_drives():
-    
+    pass
 
 
 if __name__ == "__main__":
