@@ -11,6 +11,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.console import Console
 from rich.prompt import Prompt
+from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn
 
 
 #constructors
@@ -75,9 +76,28 @@ def main_menu():
 
 
 
+def wipe_device(partition, method):
+    device = partition.device
+    console.print(f"\n[bold red]WARNING:[/bold red] This will permanently erase [bold]{device}[/bold]")
+    console.print(f"[bold]Method:[/bold] {method['name']} — {method['passes']} pass(es)\n")
+    confirm = Prompt.ask(f"[bold]Type the device name [cyan]{device}[/cyan] to confirm[/bold]")
+    
+    if confirm.strip() != device:
+        console.print("\n[green]Operation cancelled.[/green]\n")
+        return False
+
+
+
+
+
+
+
 if __name__ == "__main__":
     
     #check_root()
     #display_banner()
-    #list_drives()
-    pass
+    list_drives()
+    dev=Prompt.ask("Enter the device name to wipe (e.g. /dev/sdb)")
+    console.print(f"You entered: {dev}")
+
+
