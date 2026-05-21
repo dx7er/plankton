@@ -71,20 +71,94 @@ def list_drives():
     return partitions
 
 
-def main_menu():
-    pass
+
+def _get_passes(method_name):
+    
+    Z = lambda size: bytes(size)             # zeros
+    O = lambda size: b'\xff' * size          # ones  
+    R = lambda size: os.urandom(size)        # random
+
+    passes = {
+        "Zero Fill":          [("Zero",   Z)],
+        "Random Fill":        [("Random", R)],
+        "DoD 5220.22-M Short":[("Zero",   Z), ("Ones", O), ("Random", R)],
+        "DoD 5220.22-M Full": [("Zero",   Z), ("Ones", O), ("Random", R),
+                               ("Zero",   Z), ("Ones", O), ("Random", R), ("Zero", Z)],
+        "Schneier 7-pass":    [("Ones",   O), ("Zero", Z), ("Random", R),
+                               ("Random", R), ("Random", R), ("Random", R), ("Random", R)],
+        "Gutmann 35-pass":    [("Random", R)] * 4 +
+                              [("Zero",   Z), ("Ones", O), ("Random", R)] * 9 +
+                              [("Random", R)] * 4,
+    }
+
+    return passes.get(method_name, [("Random", R)])
 
 
 
 def wipe_device(partition, method):
     device = partition.device
+
     console.print(f"\n[bold red]WARNING:[/bold red] This will permanently erase [bold]{device}[/bold]")
     console.print(f"[bold]Method:[/bold] {method['name']} — {method['passes']} pass(es)\n")
+
     confirm = Prompt.ask(f"[bold]Type the device name [cyan]{device}[/cyan] to confirm[/bold]")
-    
+
     if confirm.strip() != device:
-        console.print("\n[green]Operation cancelled.[/green]\n")
+        console.print("\n[green]Operation cancelled.[/green]")
         return False
+
+    console.print(f"\n[bold cyan]Starting wipe on {device}...[/bold cyan]\n")
+
+    try:
+        # get device size
+        device_size = os.path.getsize(device)
+        if device_size == 0:
+            fd = os.open(device, os.O_RDONLY)
+            device_size = os.lseek(fd, 0, os.SEEK_END)
+            os.close(fd)
+
+        chunk_size = 4 * 1024 * 1024  # 4MB chunks
+
+        passes = _get_passes(method["name"])
+
+        with Progress(
+            TextColumn("[bold cyan]{task.description}"),
+            BarColumn(bar_width=40),
+            "[progress.percentage]{task.percentage:>3.0f}%",
+            TimeElapsedColumn(),
+            console=console
+        ) as progress:
+
+            for pass_num, (label, data_fn) in enumerate(passes, start=1):
+                task = progress.add_task(
+                    f"Pass {pass_num}/{len(passes)} — {label}",
+                    total=device_size
+                )
+
+                fd = os.open(device, os.O_WRONLY | os.O_SYNC)
+                try:
+                    written = 0
+                    while written < device_size:
+                        remaining = device_size - written
+                        chunk = data_fn(min(chunk_size, remaining))
+                        os.write(fd, chunk)
+                        written += len(chunk)
+                        progress.update(task, completed=written)
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
+
+        console.print(f"\n[bold green]Wipe completed on {device}[/bold green]")
+        return True
+
+    except PermissionError:
+        console.print("\n[bold red]Permission denied. Run as root (sudo).[/bold red]")
+        return False
+    except Exception as e:
+        console.print(f"\n[bold red]Error: {e}[/bold red]")
+        return False
+
+
 
 
 
