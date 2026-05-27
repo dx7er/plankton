@@ -366,6 +366,6 @@ def main_menu():
 
 
 if __name__ == "__main__":
-    check_root()
+    #check_root()
     animate_banner()
     main_menu()
