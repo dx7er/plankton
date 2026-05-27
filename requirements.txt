@@ -1,0 +1,12 @@
+appdirs==1.4.4
+logging==0.4.9.6
+lxml==6.0.2
+markdown-it-py==4.2.0
+mdurl==0.1.2
+packaging==26.0
+psutil==7.2.2
+pyfiglet==1.0.4
+Pygments==2.20.0
+pyshark==0.6
+rich==15.0.0
+termcolor==3.3.0
